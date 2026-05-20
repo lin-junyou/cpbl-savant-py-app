@@ -64,17 +64,19 @@ export function ReleasePoint({ pitches, width = 360, height = 360 }: Props) {
       .attr("y2", y(0))
       .attr("stroke", "#94a3b8");
 
-    // Grid
+    // Grid lines only — tickFormat("") suppresses tick labels so the
+    // labelled axes drawn below don't render text twice.
     g.append("g")
+      .attr("class", "grid")
       .attr("transform", `translate(0,${h})`)
-      .call(d3.axisBottom(x).ticks(6).tickSize(-h))
-      .selectAll("line")
-      .attr("stroke", "#e5e7eb");
+      .call(d3.axisBottom(x).ticks(6).tickSize(-h).tickFormat(() => ""))
+      .call((s) => s.selectAll("line").attr("stroke", "#e5e7eb"))
+      .call((s) => s.select("path.domain").remove());
     g.append("g")
-      .call(d3.axisLeft(y).ticks(5).tickSize(-w))
-      .selectAll("line")
-      .attr("stroke", "#e5e7eb");
-    g.selectAll("path.domain").attr("stroke", "transparent");
+      .attr("class", "grid")
+      .call(d3.axisLeft(y).ticks(5).tickSize(-w).tickFormat(() => ""))
+      .call((s) => s.selectAll("line").attr("stroke", "#e5e7eb"))
+      .call((s) => s.select("path.domain").remove());
 
     g.selectAll(".rel")
       .data(data)

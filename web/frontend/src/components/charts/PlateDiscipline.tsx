@@ -86,7 +86,7 @@ export function PlateDiscipline({ pid, role }: Props) {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {g.metrics.map(([k, label, hint]) => {
-                  const v = (data as Record<string, number>)[k as string];
+                  const v = (data as unknown as Record<string, number>)[k as string];
                   return (
                     <div
                       key={k as string}

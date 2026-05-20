@@ -46,8 +46,8 @@ export function PercentileBar({ label, pr, value }: Props) {
   const isExtreme = clamped <= 25 || clamped >= 75;
   const textColor = isExtreme ? "#ffffff" : "#1f2937";
   return (
-    <div className="grid grid-cols-[120px_1fr_56px] items-center gap-3 py-1.5">
-      <span className="text-xs font-semibold uppercase tracking-wide text-right text-slate-700 dark:text-slate-300">
+    <div className="grid grid-cols-[130px_1fr_72px] items-center gap-3 py-1.5">
+      <span className="text-sm font-bold uppercase tracking-wide text-right text-slate-900">
         {label}
       </span>
       <div className="relative h-2 rounded-full overflow-visible bg-gradient-to-r from-[rgb(76,124,196)] via-[rgb(228,226,220)] to-[rgb(220,56,38)]">
@@ -71,7 +71,7 @@ export function PercentileBar({ label, pr, value }: Props) {
           {Math.round(clamped)}
         </span>
       </div>
-      <span className="text-sm font-bold tabular-nums text-right text-slate-900 dark:text-slate-100">
+      <span className="text-sm font-bold tabular-nums text-right text-slate-900">
         {value ?? ""}
       </span>
     </div>

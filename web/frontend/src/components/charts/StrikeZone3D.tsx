@@ -23,6 +23,10 @@ import * as THREE from "three";
 import { useMemo, useRef, useState, useEffect } from "react";
 import type { TrajectoryPitch, PitchLocation } from "@/lib/api";
 
+// Warm the ball texture on module load so the AnimatedBall doesn't suspend
+// the Canvas mid-frame and leave a blank scene.
+useTexture.preload("/textures/ball.jpg");
+
 const PITCH_HEX: Record<string, string> = {
   "Four-Seam": "#dc2626",
   "Two-Seam": "#ef4444",
@@ -124,7 +128,7 @@ function spinTilt(p: TrajectoryPitch): string {
   // Convert degrees to hours (360° = 12 hours)
   const totalMin = Math.round((deg / 360) * 12 * 60);
   let hh = Math.floor(totalMin / 60);
-  let mm = totalMin % 60;
+  const mm = totalMin % 60;
   if (hh === 0) hh = 12;
   return `${hh}:${mm.toString().padStart(2, "0")}`;
 }
@@ -903,13 +907,30 @@ export function StrikeZone3D({
 
   const pitch = selected != null ? pitches[selected] : null;
 
+  const [contextLost, setContextLost] = useState(false);
+
   return (
     <div className="grid gap-3 md:grid-cols-[1fr_280px]">
       <div
         style={{ height }}
         className="w-full rounded-lg overflow-hidden border bg-slate-900 relative"
       >
-        <Canvas camera={{ position: [-3.5, 2.4, 4.5], fov: 38 }} shadows>
+        <Canvas
+          camera={{ position: [-3.5, 2.4, 4.5], fov: 38 }}
+          shadows="basic"
+          dpr={[1, 1.5]}
+          gl={{ antialias: true, powerPreference: "high-performance" }}
+          onCreated={({ gl }) => {
+            const canvas = gl.domElement;
+            canvas.addEventListener("webglcontextlost", (e) => {
+              e.preventDefault();
+              setContextLost(true);
+            });
+            canvas.addEventListener("webglcontextrestored", () => {
+              setContextLost(false);
+            });
+          }}
+        >
           <ambientLight intensity={0.7} />
           <directionalLight position={[6, 10, 5]} intensity={0.9} castShadow />
           <Ground />
@@ -927,7 +948,13 @@ export function StrikeZone3D({
           {locations.length > 0 && (
             <PlateDots locations={locations} onSelect={setSelectedLoc} />
           )}
-          {pitch && <AnimatedBall pitch={pitch} playing={playing} speed={speed} />}
+          {/* Texture-suspending Baseball is wrapped so the rest of the scene
+              renders even while the JPG is still loading. */}
+          {pitch && (
+            <React.Suspense fallback={null}>
+              <AnimatedBall pitch={pitch} playing={playing} speed={speed} />
+            </React.Suspense>
+          )}
           <OrbitControls
             target={[1.2, 0.85, 0]}
             enablePan
@@ -936,6 +963,20 @@ export function StrikeZone3D({
             maxPolarAngle={Math.PI / 2 - 0.02}
           />
         </Canvas>
+        {contextLost && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/90 text-slate-100 text-sm">
+            <div className="font-semibold">3D 場景中斷（WebGL context lost）</div>
+            <div className="text-xs text-slate-300 max-w-md text-center px-4">
+              瀏覽器釋放了 3D 算繪 context — 通常因為頁面開太多 3D 視圖或分頁切換。
+            </div>
+            <button
+              onClick={() => location.reload()}
+              className="px-3 py-1.5 rounded bg-amber-500 text-slate-900 font-semibold text-xs"
+            >
+              重新整理頁面
+            </button>
+          </div>
+        )}
         {pitches.length > 0 && (
           <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 rounded-md bg-slate-950/85 px-3 py-2 text-xs text-slate-200 backdrop-blur">
             <button

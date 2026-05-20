@@ -4,7 +4,6 @@
  * Park Factors bar chart — diverging bars centred on 100.
  * Above 100 = the park favours that outcome vs league average.
  */
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface Props {
   factors: Record<string, number>;
@@ -81,9 +80,6 @@ export function ParkFactors({ factors, ownN, otherN }: Props) {
           );
         })}
       </div>
-      <p className="text-xs text-slate-700">
-        因子 100 = 與聯盟平均一致；&gt;100 = 此球場比聯盟平均更容易發生該事件。
-      </p>
     </div>
   );
 }

@@ -4,15 +4,15 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/common";
 
 const MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
 
 export default function CalendarPage() {
   const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(5); // 1-indexed
+  const [month, setMonth] = useState(5);
 
   const start = `${year}-${String(month).padStart(2, "0")}-01`;
   const lastDay = new Date(year, month, 0).getDate();
@@ -24,12 +24,8 @@ export default function CalendarPage() {
   });
 
   const grid = useMemo(() => {
-    // Group games by date
     const byDate: Record<string, typeof games.data> = {};
-    games.data?.forEach((g) => {
-      (byDate[g.date] ??= []).push(g);
-    });
-    // Build grid: weeks of 7 days, starting from Sunday before month start
+    games.data?.forEach((g) => { (byDate[g.date] ??= []).push(g); });
     const firstDow = new Date(year, month - 1, 1).getDay();
     const cells: Array<{ date: string | null; games: NonNullable<typeof games.data> }> = [];
     for (let i = 0; i < firstDow; i++) cells.push({ date: null, games: [] });
@@ -54,19 +50,22 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">賽程行事曆</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={prevMonth}>← 上月</Button>
-          <span className="text-lg font-semibold text-slate-900 min-w-[120px] text-center">
-            {year} {MONTHS[month - 1]}
-          </span>
-          <Button variant="outline" size="sm" onClick={nextMonth}>下月 →</Button>
-          <Link href="/games" className="ml-3 text-xs text-blue-700 hover:underline">
-            清單視圖 →
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="賽程行事曆"
+        subtitle={`${year} ${MONTHS[month - 1]}`}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={prevMonth}>← 上月</Button>
+            <span className="text-lg font-semibold text-slate-900 min-w-[120px] text-center">
+              {year} {MONTHS[month - 1]}
+            </span>
+            <Button variant="outline" size="sm" onClick={nextMonth}>下月 →</Button>
+            <Link href="/games" className="ml-3 text-xs text-blue-700 hover:underline">
+              清單視圖 →
+            </Link>
+          </div>
+        }
+      />
 
       <Card>
         <CardContent className="p-3">
@@ -87,15 +86,10 @@ export default function CalendarPage() {
               {grid.map((week, wi) => (
                 <tr key={wi}>
                   {week.map((c, di) => (
-                    <td
-                      key={di}
-                      className="align-top h-24 border border-slate-200 p-1.5"
-                    >
+                    <td key={di} className="align-top h-24 border border-slate-200 p-1.5">
                       {c.date ? (
                         <>
-                          <div
-                            className={`text-xs font-semibold mb-0.5 ${di === 0 || di === 6 ? "text-red-600" : "text-slate-700"}`}
-                          >
+                          <div className={`text-xs font-semibold mb-0.5 ${di === 0 || di === 6 ? "text-red-600" : "text-slate-700"}`}>
                             {Number(c.date.slice(-2))}
                           </div>
                           <div className="space-y-0.5">
@@ -106,23 +100,17 @@ export default function CalendarPage() {
                                 className="block text-[10px] leading-tight bg-slate-50 hover:bg-slate-100 rounded px-1 py-0.5 truncate"
                                 title={`${g.visiting_team_name} @ ${g.home_team_name}`}
                               >
-                                <span className="text-slate-700">
-                                  {g.visiting_team_name?.replace("二軍", "")}
-                                </span>
+                                <span className="text-slate-700">{g.visiting_team_name?.replace("二軍", "")}</span>
                                 {g.visiting_score != null && g.home_score != null && (
                                   <span className="font-bold text-slate-900 mx-0.5">
                                     {g.visiting_score}-{g.home_score}
                                   </span>
                                 )}
-                                <span className="text-slate-700">
-                                  {g.home_team_name?.replace("二軍", "")}
-                                </span>
+                                <span className="text-slate-700">{g.home_team_name?.replace("二軍", "")}</span>
                               </Link>
                             ))}
                             {c.games.length > 3 && (
-                              <div className="text-[10px] text-slate-500">
-                                +{c.games.length - 3}…
-                              </div>
+                              <div className="text-[10px] text-slate-700 font-semibold">+{c.games.length - 3}…</div>
                             )}
                           </div>
                         </>

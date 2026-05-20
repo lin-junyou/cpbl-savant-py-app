@@ -13,7 +13,7 @@ import { PITCH_COLORS } from "./StrikeZone";
 
 interface Props {
   stats: PitchStat[];
-  /** Player name shown in the inline header (optional). */
+  /** Optional — accepted for backward compat, no longer displayed (title says it). */
   playerName?: string;
 }
 
@@ -30,26 +30,26 @@ const ZH_PITCH_NAME: Record<string, string> = {
   "Knuckleball": "蝴蝶球",
 };
 
-export function PitchOutcomes({ stats, playerName }: Props) {
+export function PitchOutcomes({ stats }: Props) {
   if (!stats?.length) {
     return <div className="text-slate-700 py-8 text-center">沒有資料</div>;
   }
   return (
     <div className="space-y-4">
-      {/* Savant-style inline pitch list */}
-      <div className="text-base leading-relaxed">
-        <span className="text-slate-900">
-          {playerName ?? "本投手"} 共有 <b>{stats.length}</b> 種球路：
-        </span>{" "}
-        {stats.map((s, i) => (
-          <span key={s.auto_pitch_type}>
-            <b style={{ color: PITCH_COLORS[s.auto_pitch_type] ?? "#0f172a" }}>
-              {ZH_PITCH_NAME[s.auto_pitch_type] ?? s.auto_pitch_type}
-            </b>
-            <span className="text-slate-700"> ({s.usage_pct.toFixed(1)}%)</span>
-            {i < stats.length - 1 ? <span className="text-slate-500">、</span> : "。"}
-          </span>
-        ))}
+      {/* Compact pitch-mix legend: chips with pitch dot + name + usage% */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-sm">
+        {stats.map((s) => {
+          const color = PITCH_COLORS[s.auto_pitch_type] ?? "#888";
+          return (
+            <span key={s.auto_pitch_type} className="inline-flex items-center gap-1.5">
+              <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+              <b style={{ color }}>
+                {ZH_PITCH_NAME[s.auto_pitch_type] ?? s.auto_pitch_type}
+              </b>
+              <span className="text-slate-600 tabular-nums">{s.usage_pct.toFixed(1)}%</span>
+            </span>
+          );
+        })}
       </div>
 
       <div className="overflow-x-auto">

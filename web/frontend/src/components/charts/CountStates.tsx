@@ -75,9 +75,6 @@ export function CountStates({ data }: Props) {
           </span>
         ))}
       </div>
-      <p className="text-xs text-slate-700">
-        投手在不同球數狀況下的球種選擇 — 兩好球時通常增加 breaking ball 比例去搶 K。
-      </p>
     </div>
   );
 }

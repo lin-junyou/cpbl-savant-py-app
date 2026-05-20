@@ -893,7 +893,7 @@ def stadium_spray(
     sql = (
         "SELECT land_bearing, land_distance_m, hit_exit_speed_kph, "
         "hit_launch_angle, content, batting_action, hitter_name, "
-        "pitcher_name, auto_pitch_type, date "
+        "pitcher_name, auto_pitch_type, date, land_hang_time "
         "FROM trackman_pitches WHERE " + " AND ".join(where) + " LIMIT ?"
     )
     params.append(limit)
@@ -997,6 +997,37 @@ def game_pitches(
     return rows
 
 
+# ─── Per-player 3D trajectory (used by player profile zone3d tab) ──────
+
+@app.get("/api/players/{pid}/trajectory")
+def player_trajectory(pid: str, role: str = Query("pitcher"), limit: int = 200):
+    """Pitch trajectories across all games for a single player.
+
+    Same shape as /api/trajectory/{game_id} so the frontend can reuse
+    StrikeZone3D's `pitches` prop and the 3D experience matches the game view.
+    """
+    col = "pitcher_acnt" if role == "pitcher" else "hitter_acnt"
+    sql = (
+        "SELECT inning, out_cnt, ball_cnt, strike_cnt, pitch_cnt, "
+        "pitcher_name, pitcher_acnt, hitter_name, hitter_acnt, "
+        "auto_pitch_type, pitch_call, rel_speed_kph, spin_rate, "
+        "plate_loc_side, plate_loc_height, "
+        "traj_x, traj_y, traj_z "
+        f"FROM trackman_pitches WHERE {col} = ? AND traj_x IS NOT NULL "
+        "ORDER BY date DESC, game_id, pitch_cnt LIMIT ?"
+    )
+    with db() as conn:
+        rows = _rows(conn.execute(sql, (pid, limit)))
+    for r in rows:
+        for k in ("traj_x", "traj_y", "traj_z"):
+            if r.get(k):
+                try:
+                    r[k] = json.loads(r[k])
+                except json.JSONDecodeError:
+                    r[k] = None
+    return rows
+
+
 # ─── Teams (helper for filters) ─────────────────────────────────────────
 
 @app.get("/api/players/{pid}/recent-form")
@@ -1015,8 +1046,8 @@ def player_recent_form(pid: str, role: str = Query("pitcher")):
             "date, game_id, plate_appearances, hitting_cnt AS ab, "
             "hit_cnt AS hits, home_run_cnt, "
             "two_base_hit_cnt, three_base_hit_cnt, "
-            "bases_on_balls_cnt AS bb, strike_out_cnt, "
-            "run_batted_in_cnt AS rbi, score_cnt"
+            "bases_onballs_cnt AS bb, strike_out_cnt, "
+            "run_batted_incnt AS rbi, score_cnt"
         )
         table, acnt = "game_hitters", "hitter_acnt"
     with db() as conn:

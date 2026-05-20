@@ -80,12 +80,6 @@ export function PitchPhysics({ rows }: { rows: Row[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-slate-700">
-        <b>Ext</b> = 釋球延伸（球出手時離本壘的距離；越大越好，「壓縮投打距離」）。
-        <b>Δ kph</b> = 球速衰減（rel − zone；速球的 carry 與 4-seam rising 效果反相關）。
-        <b>VAA</b> = vertical approach angle（負值越接近 0 表示平直「rising」效果，4-seam 越平越難打）。
-        <b>HAA</b> = horizontal approach angle（投手側向釋球差異 + magnus 影響）。
-      </p>
     </div>
   );
 }

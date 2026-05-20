@@ -146,10 +146,6 @@ export function ContactProfile({ rows, width, height }: Props) {
           </div>
         </div>
       </div>
-      <p className="text-xs text-slate-700">
-        接觸點的 X = 前後（負值=接觸點在本壘前方=「打早」），Y = 高度（揮棒平面），Z = 側向。
-        擊球後 spin 高 = 揮棒切到球邊緣（容易產生平飛/側旋飛球）；hang time 反映飛行軌跡的高度與距離。
-      </p>
     </div>
   );
 }

@@ -123,6 +123,7 @@ export interface SprayPoint {
   pitcher_name?: string | null;
   auto_pitch_type?: string | null;
   date?: string | null;
+  land_hang_time?: number | null;
 }
 
 export interface Stadium {
@@ -294,6 +295,10 @@ export const api = {
     qs.set("limit", "300");
     return get<TrajectoryPitch[]>(`/api/trajectory/${gameId}?${qs}`);
   },
+  playerTrajectory: (pid: string, role = "pitcher", limit = 200) =>
+    get<TrajectoryPitch[]>(
+      `/api/players/${pid}/trajectory?role=${role}&limit=${limit}`,
+    ),
   teams: () =>
     get<Array<{ team_code: string; team_name: string; players: number }>>(
       "/api/teams",

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader, EmptyState } from "@/components/common";
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   FINISHED:  { label: "已結束", color: "bg-slate-300 text-slate-800" },
@@ -19,7 +20,6 @@ export default function LivePage() {
   const [date, setDate] = useState(today);
   const [now, setNow] = useState(new Date());
 
-  // Tick every second so user sees the "last refresh"
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
@@ -28,7 +28,6 @@ export default function LivePage() {
   const games = useQuery({
     queryKey: ["live", date],
     queryFn: () => api.schedule({ start: date, end: date, limit: 50 }),
-    // Refetch every 30 seconds when there are in-progress games
     refetchInterval: (q) => {
       const data = q.state.data;
       if (!data) return 30_000;
@@ -43,75 +42,87 @@ export default function LivePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">
-          🔴 即時比賽 Live
-        </h1>
-        <div className="flex items-center gap-3">
+      <PageHeader
+        title="🔴 即時比賽 Live"
+        subtitle={`最後更新：${games.dataUpdatedAt ? new Date(games.dataUpdatedAt).toLocaleTimeString() : "—"}`}
+        actions={
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="border rounded px-3 py-1.5 text-sm bg-white"
           />
-          <div className="text-xs text-slate-700">
-            最後更新：{games.dataUpdatedAt ? new Date(games.dataUpdatedAt).toLocaleTimeString() : "—"}
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {live.length > 0 && (
-        <section>
-          <h2 className="text-lg font-bold text-red-600 mb-2 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" /> 進行中（{live.length}）
-          </h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            {live.map((g) => <GameCard key={g.game_id} g={g} live />)}
-          </div>
-        </section>
+        <Section
+          title={
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" /> 進行中（{live.length}）
+            </span>
+          }
+          tone="red"
+        >
+          {live.map((g) => <GameCard key={g.game_id} g={g} live />)}
+        </Section>
       )}
 
       {upcoming.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-blue-700 mb-2">即將開賽（{upcoming.length}）</h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            {upcoming.map((g) => <GameCard key={g.game_id} g={g} />)}
-          </div>
-        </section>
+        <Section title={`即將開賽（${upcoming.length}）`} tone="blue">
+          {upcoming.map((g) => <GameCard key={g.game_id} g={g} />)}
+        </Section>
       )}
 
       {finished.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-slate-700 mb-2">已結束（{finished.length}）</h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            {finished.map((g) => <GameCard key={g.game_id} g={g} />)}
-          </div>
-        </section>
+        <Section title={`已結束（${finished.length}）`} tone="slate">
+          {finished.map((g) => <GameCard key={g.game_id} g={g} />)}
+        </Section>
       )}
 
       {postponed.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-amber-700 mb-2">延賽（{postponed.length}）</h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            {postponed.map((g) => <GameCard key={g.game_id} g={g} />)}
-          </div>
-        </section>
+        <Section title={`延賽（${postponed.length}）`} tone="amber">
+          {postponed.map((g) => <GameCard key={g.game_id} g={g} />)}
+        </Section>
       )}
 
       {games.data && games.data.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center text-slate-700">
-            {date} 沒有比賽
-          </CardContent>
-        </Card>
+        <Card><CardContent className="p-0"><EmptyState size="page" text={`${date} 沒有比賽`} /></CardContent></Card>
       )}
-      {/* Hidden: re-render so "now" updates */}
       <span className="hidden">{now.toISOString()}</span>
     </div>
   );
 }
 
-function GameCard({ g, live }: { g: { game_id: string; date: string; game_status: string; kind_code: string; visiting_team_name: string; home_team_name: string; visiting_score: number | null; home_score: number | null; field_name: string | null; winning_pitcher_name: string | null }; live?: boolean }) {
+const TONE_CLS = {
+  red: "text-red-600",
+  blue: "text-blue-700",
+  slate: "text-slate-700",
+  amber: "text-amber-700",
+} as const;
+
+function Section({
+  title, tone, children,
+}: { title: React.ReactNode; tone: keyof typeof TONE_CLS; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className={`text-lg font-bold mb-2 flex items-center gap-2 ${TONE_CLS[tone]}`}>{title}</h2>
+      <div className="grid gap-3 md:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+function GameCard({
+  g, live,
+}: {
+  g: {
+    game_id: string; date: string; game_status: string; kind_code: string;
+    visiting_team_name: string; home_team_name: string;
+    visiting_score: number | null; home_score: number | null;
+    field_name: string | null; winning_pitcher_name: string | null;
+  };
+  live?: boolean;
+}) {
   const status = STATUS_LABEL[g.game_status] ?? { label: g.game_status, color: "bg-slate-200" };
   return (
     <Link href={`/games/${g.game_id}`}>
@@ -138,9 +149,7 @@ function GameCard({ g, live }: { g: { game_id: string; date: string; game_status
             </div>
           </div>
           {g.winning_pitcher_name && (
-            <div className="mt-2 text-xs text-slate-700">
-              W: {g.winning_pitcher_name}
-            </div>
+            <div className="mt-2 text-xs text-slate-700">W: {g.winning_pitcher_name}</div>
           )}
         </CardContent>
       </Card>
